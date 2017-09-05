@@ -25,7 +25,6 @@ public class Diet {
         
         // manage the status
         int status = 0; 
-        System.out.println(status);
         
         // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
         List<List> Sets = new ArrayList<>();
@@ -33,15 +32,15 @@ public class Diet {
         Sets = chooseSubSet(n,m);
         if((int)Sets.get(0).get(0) == -1) status = 1;
         status = processStatus(status, A, b);
-        
         if (status==-1 || status ==1) return status;
 
         
-        
+        // now we have a subsets, lets print out all sets
         for(int setIter = 0; setIter < Sets.size(); setIter ++){
             List subset = Sets.get(setIter);
             
-            
+            System.out.println(Arrays.toString(subset.toArray()));
+
             
             
             
@@ -73,10 +72,7 @@ public class Diet {
     }
     
     static int processStatus(int status, double A[][], double[] b){
-        if (status == 0){
-            return status;
-        }
-        if(status == 1){ // not possible for bounded solution, still possible to have no solution
+        //if(status == 1){ // not possible for bounded solution, still possible to have no solution
             for(int row =0; row<A.length; row++){
                 for(int otherRow = 0; otherRow<A.length; otherRow ++){
                     if(row != otherRow){
@@ -94,12 +90,11 @@ public class Diet {
                     }
                 }
             }
-        }
+        //}
         
         return status;
         
     }
-    
     
     static List<List> chooseSubSet(int n, int m){
         // choose n euqation out of m equations
@@ -111,10 +106,35 @@ public class Diet {
             subset.add(-1);
             Sets.add(subset);
             return Sets;
+        } else if(m == n){
+            List<Integer> subset = new ArrayList<>();
+            for (int iter = 0; iter<m; iter ++){
+                subset.add(1);
+            }
+            Sets.add(subset);
+            return Sets;
+        } else {
+
+            for (int i = 0; i < (1 << n); i++) {
+                ArrayList<Integer> subset = new ArrayList<>();
+                for (int j = 0; j < n; j++) {
+                    if (((i >> j) & 1) == 1) {
+                        subset.add(1);
+                    } else subset.add(0);
+                }
+                
+                int sum = subset.stream().mapToInt(Integer::intValue).sum();
+                if (sum == m) Sets.add(subset);                
+                
+            }
+
+            return Sets;
         }
+        
+        
 
         
-        return Sets;
+        
     }
 
     static double[] SolveEquation(Equation equation) {
