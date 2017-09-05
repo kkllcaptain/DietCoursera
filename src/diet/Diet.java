@@ -3,6 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
+            // this is a new version 0904
+            // this is a new version 0904
+            // this is a new version 0904
+            // this is a new version 0904
+
 package diet;
 
 /**
@@ -42,7 +48,7 @@ public class Diet {
             System.out.println(Arrays.toString(subset.toArray()));
 
             
-            
+            // this is a new version
             
             
         }
