@@ -30,11 +30,8 @@ public class Diet {
         // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
         List<List> Sets = new ArrayList<>();
         
-        Sets = chooseSubSet(status,n,m);
-        
-        
-        
-        
+        Sets = chooseSubSet(n,m);
+        if((int)Sets.get(0).get(0) == -1) status = 1;
         status = processStatus(status, A, b);
         
         if (status==-1 || status ==1) return status;
@@ -104,7 +101,7 @@ public class Diet {
     }
     
     
-    static List<List> chooseSubSet(int status, int n, int m){
+    static List<List> chooseSubSet(int n, int m){
         // choose n euqation out of m equations
         
         List<List> Sets = new ArrayList<>();
@@ -113,7 +110,6 @@ public class Diet {
             List<Integer> subset = new ArrayList<>();
             subset.add(-1);
             Sets.add(subset);
-            status = 1;
             return Sets;
         }
 
