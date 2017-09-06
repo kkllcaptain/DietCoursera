@@ -4,11 +4,6 @@
  * and open the template in the editor.
  */
 
-            // this is a new version 0904
-            // this is a new version 0904
-            // this is a new version 0904
-            // this is a new version 0904
-
 package diet;
 
 /**
@@ -28,6 +23,36 @@ public class Diet {
     int solveDietProblem(int n, int m, double A[][], double[] b, double[] c, double[] x) {
         Arrays.fill(x, 1);
         // Write your code here - simplex algorithm
+        // m restrictions
+        // n variables
+        
+        // ====================================================
+        // [Preprocessing] remove all parallel euqations
+        // if incorrect euqations were found, return as no solution (-1)
+        // if more variables than restrictions, return as infinit (+1)
+        // ====================================================
+        
+        List<ArrayList> AList = new ArrayList<>();
+        List<Double> bList = new ArrayList<>();
+        for(int i =0; i<A.length; i++){
+            List RowList = new ArrayList<Double>();
+            for(int j=0; j<A[0].length; j++){
+                RowList.add(A[i][j]);
+            }
+            AList.add(new ArrayList(RowList));
+            bList.add(b[i]);
+        }
+        
+        int newSize = preProcessEquations(AList, bList);
+        if (newSize == -1) return -1;
+        else n -= newSize;
+        if (n<m) return 1;
+
+        Equation newEq = constructNewEquations(AList, bList);
+        A = newEq.a;
+        b = newEq.b;
+        
+        // ===============================================
         
         // manage the status
         int status = 0; 
@@ -36,34 +61,30 @@ public class Diet {
         List<List> Sets = new ArrayList<>();
         
         Sets = chooseSubSet(n,m);
-        if((int)Sets.get(0).get(0) == -1) status = 1;
-        status = processStatus(status, A, b);
-        if (status==-1 || status ==1) return status;
-
         
         // now we have a subsets, lets print out all sets
-        for(int setIter = 0; setIter < Sets.size(); setIter ++){
-            List subset = Sets.get(setIter);
+        //for(int setIter = 0; setIter < Sets.size(); setIter ++){
+            List subset = Sets.get(0);// may not need iterate all sets. 
             
             System.out.println(Arrays.toString(subset.toArray()));
 
             
-            // this is a new version
+            // construct a new A and b
+                    // generate valid subsets
+                 double[][] A_E = A;
+                 double[] b_E = b;
             
-            
-        }
+        //}
         
         
         
         
-        // generate valid subsets
-        double[][] A_E = A;
-        double[] b_E = b;
+
         
         // check if the selected constraints are parallel, if so, skip, and output an warning that there might not be an answer
         
         // solve the system of euqalities by Gaussian elimination       
-        Equation newEq = new Equation(A_E, b_E);
+        
         
         // the obtained is a vertex
         
@@ -78,6 +99,54 @@ public class Diet {
         return 0;
     }
     
+    static int preProcessEquations(List<ArrayList> A, List<Double> b){
+        int removed = 0; // no restriction was removed (yet)
+        for(int row =0; row<A.size(); row++){
+                for(int otherRow = 0; otherRow<A.size(); otherRow++){
+                    if(row != otherRow){
+                        double ratio = ((double)A.get(row).get(0))/((double) A.get(otherRow).get(0));
+                        boolean Aparallel = true;
+                        for(int column = 1; column <A.get(0).size(); column++){
+                            if(((double)A.get(row).get(column))/((double) A.get(otherRow).get(column)) != ratio){
+                                Aparallel = false;
+                                // not parallel
+                            }
+                        }
+                        boolean bParallel = (b.get(row)==b.get(otherRow));
+                        if(Aparallel&&bParallel){
+                            // truely parallel
+                            A.remove(otherRow);
+                            b.remove(otherRow);
+                            removed++;
+                        } else if (Aparallel&&(!bParallel)){
+                            // incorrect fomulation
+                            A.clear();
+                            b.clear();
+                            return -1;
+                        }
+                    }
+                }
+            }
+        return removed;
+    }
+    
+    Equation constructNewEquations(List<ArrayList> A, List<Double> b){
+        double[][] Ap = new double[A.size()][A.get(0).size()];
+        double[] bp = new double[A.size()];
+        
+        for (int row = 0; row < A.size(); row++){
+            bp[row] = (double) b.get(row);
+            for (int column = 0; column < A.get(0).size(); column ++){
+                Ap[row][column] = (double) A.get(row).get(column);
+            }
+        }
+        
+        Equation myEq = new Equation(Ap,bp);
+        
+        return myEq;
+        
+    }
+
     static int processStatus(int status, double A[][], double[] b){
         //if(status == 1){ // not possible for bounded solution, still possible to have no solution
             for(int row =0; row<A.length; row++){
@@ -108,12 +177,7 @@ public class Diet {
         
         List<List> Sets = new ArrayList<>();
         // if there are more variables than constraints
-        if (m>n){
-            List<Integer> subset = new ArrayList<>();
-            subset.add(-1);
-            Sets.add(subset);
-            return Sets;
-        } else if(m == n){
+        if(m == n){
             List<Integer> subset = new ArrayList<>();
             for (int iter = 0; iter<m; iter ++){
                 subset.add(1);
@@ -137,11 +201,7 @@ public class Diet {
 
             return Sets;
         }
-        
-        
-
-        
-        
+       
     }
 
     static double[] SolveEquation(Equation equation) {
