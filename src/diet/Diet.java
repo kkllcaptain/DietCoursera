@@ -63,16 +63,14 @@ public class Diet {
         List subset = Sets.get(0);// may not need iterate all sets. 
   
         Equation newEq = constructNewEquations(AList, bList, subset);
-        A = newEq.a;
-        b = newEq.b;
-        
+     
         
             
         System.out.println(Arrays.toString(subset.toArray()));
 
 
         // solve the system of euqalities by Gaussian elimination       
-        
+        x = SolveEquation(newEq);
         
         // the obtained is a vertex
         
@@ -87,7 +85,7 @@ public class Diet {
         return 0;
     }
     
-    static int preProcessEquations(List<ArrayList> A, List<Double> b){
+    int preProcessEquations(List<ArrayList> A, List<Double> b){
         int removed = 0; // no restriction was removed (yet)
         for(int row =0; row<A.size(); row++){
                 for(int otherRow = 0; otherRow<A.size(); otherRow++){
@@ -163,7 +161,7 @@ public class Diet {
         
     }
 
-    static List<List> chooseSubSet(int n, int m){
+    List<List> chooseSubSet(int n, int m){
         // choose n euqation out of m equations
         
         List<List> Sets = new ArrayList<>();
@@ -195,7 +193,7 @@ public class Diet {
        
     }
 
-    static double[] SolveEquation(Equation equation) {
+    double[] SolveEquation(Equation equation) {
         double a[][] = equation.a;
         double b[] = equation.b;
         int size = a.length;
@@ -212,12 +210,9 @@ public class Diet {
         return b;
     }
 
-    static Position SelectPivotElement(double a[][], boolean used_rows[], boolean used_columns[]) {
-        // This algorithm selects the first free element.
-        // You'll need to improve it to pass the problem.
-        Position pivot_element = null;
-        pivot_element.column =0;
-        pivot_element.row =0;
+    Position SelectPivotElement(double a[][], boolean used_rows[], boolean used_columns[]) {
+   
+        Position pivot_element = new Position(0,0);
 
         while (used_rows[pivot_element.row]) {
             ++pivot_element.row;
@@ -235,7 +230,7 @@ public class Diet {
         return pivot_element;
     }
 
-    static void SwapLines(double a[][], double b[], boolean used_rows[], Position pivot_element) {
+    void SwapLines(double a[][], double b[], boolean used_rows[], Position pivot_element) {
         int size = a.length;
 
         if (pivot_element.row == -1) {
@@ -259,7 +254,7 @@ public class Diet {
         pivot_element.row = pivot_element.column;
     }
 
-    static void ProcessPivotElement(double a[][], double b[], Position pivot_element) {
+    void ProcessPivotElement(double a[][], double b[], Position pivot_element) {
         // Write your code here
         int pivot_row = pivot_element.row;
         int pivot_column = pivot_element.column;
@@ -309,31 +304,9 @@ public class Diet {
         }
     }
 
-    static void MarkPivotElementUsed(Position pivot_element, boolean used_rows[], boolean used_columns[]) {
+    void MarkPivotElementUsed(Position pivot_element, boolean used_rows[], boolean used_columns[]) {
         used_rows[pivot_element.row] = true;
         used_columns[pivot_element.column] = true;
-    }
-
-    class Equation {
-
-        Equation(double a[][], double b[]) {
-            this.a = a;
-            this.b = b;
-        }
-
-        double a[][];
-        double b[];
-    }
-
-    class Position {
-
-        Position(int column, int row) {
-            this.column = column;
-            this.row = row;
-        }
-
-        int column;
-        int row;
     }
 
     void solve() throws IOException {
@@ -407,3 +380,25 @@ public class Diet {
     }
 
 }
+
+    class Equation {
+
+        Equation(double a[][], double b[]) {
+            this.a = a;
+            this.b = b;
+        }
+
+        double a[][];
+        double b[];
+    }
+
+    class Position {
+
+        Position(int column, int row) {
+            this.column = column;
+            this.row = row;
+        }
+
+        int column;
+        int row;
+    }
