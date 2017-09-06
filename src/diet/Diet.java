@@ -46,11 +46,10 @@ public class Diet {
         int newSize = preProcessEquations(AList, bList);
         if (newSize == -1) return -1;
         else n -= newSize;
+        //System.out.println("the number of equations that were removed: " + newSize);
         if (n<m) return 1;
 
-        Equation newEq = constructNewEquations(AList, bList);
-        A = newEq.a;
-        b = newEq.b;
+
         
         // ================= End of PreProcessing =========================
         
@@ -58,28 +57,20 @@ public class Diet {
         // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
         List<List> Sets = new ArrayList<>();
         Sets = chooseSubSet(n,m);
-        
+                
         // now we have a subsets, lets print out all sets
         //for(int setIter = 0; setIter < Sets.size(); setIter ++){
         List subset = Sets.get(0);// may not need iterate all sets. 
+  
+        Equation newEq = constructNewEquations(AList, bList, subset);
+        A = newEq.a;
+        b = newEq.b;
+        
+        
             
         System.out.println(Arrays.toString(subset.toArray()));
 
-            
-            // construct a new A and b
-                    // generate valid subsets
-                 double[][] A_E = A;
-                 double[] b_E = b;
-            
-        //}
-        
-        
-        
-        
 
-        
-        // check if the selected constraints are parallel, if so, skip, and output an warning that there might not be an answer
-        
         // solve the system of euqalities by Gaussian elimination       
         
         
@@ -101,15 +92,32 @@ public class Diet {
         for(int row =0; row<A.size(); row++){
                 for(int otherRow = 0; otherRow<A.size(); otherRow++){
                     if(row != otherRow){
-                        double ratio = ((double)A.get(row).get(0))/((double) A.get(otherRow).get(0));
+                        double ratio = 0.0;
+                        int cc = 0;
+                        
+                        while (ratio == 0.0 && cc < A.size()){
+                            if( (double) A.get(row).get(cc) != 0) {
+                                ratio = ((double)A.get(row).get(cc))/((double) A.get(otherRow).get(cc));
+                            } else {
+                                cc++;
+                            }
+                            }
                         boolean Aparallel = true;
-                        for(int column = 1; column <A.get(0).size(); column++){
-                            if(((double)A.get(row).get(column))/((double) A.get(otherRow).get(column)) != ratio){
+                        for(int column = 0; column <A.get(0).size(); column++){
+                            double currentRatio = 0.0;
+                            if (Objects.equals((double)A.get(row).get(column), (double) A.get(otherRow).get(column))&&(double)A.get(row).get(column) == 0.0) {
+                                currentRatio = ratio;
+                            } else {
+                                currentRatio = ((double)A.get(row).get(column))/((double) A.get(otherRow).get(column));
+                            }
+                            //System.out.println("the current raio is " + currentRatio + " and the ratio is " + ratio);
+                            if(!Objects.equals(currentRatio, ratio)){
                                 Aparallel = false;
                                 // not parallel
                             }
                         }
-                        boolean bParallel = (b.get(row)==b.get(otherRow));
+                        boolean bParallel = (Objects.equals(b.get(row), b.get(otherRow)));
+                        //System.out.println("Row "+row+" and Row "+otherRow+" is "+Aparallel+" and "+bParallel);
                         if(Aparallel&&bParallel){
                             // truely parallel
                             A.remove(otherRow);
@@ -127,15 +135,26 @@ public class Diet {
         return removed;
     }
     
-    Equation constructNewEquations(List<ArrayList> A, List<Double> b){
-        double[][] Ap = new double[A.size()][A.get(0).size()];
-        double[] bp = new double[A.size()];
+    Equation constructNewEquations(List<ArrayList> A, List<Double> b, List subset){
+        List<ArrayList> AE = A;
+        List<Double> bE = b;
         
-        for (int row = 0; row < A.size(); row++){
-            bp[row] = (double) b.get(row);
-            for (int column = 0; column < A.get(0).size(); column ++){
-                Ap[row][column] = (double) A.get(row).get(column);
+        for(int index =0; index<A.size(); index++){
+            if((int)subset.get(index) == 0){
+                AE.remove(index);
+                bE.remove(index);
             }
+        }
+
+        double[][] Ap = new double[AE.size()][AE.get(0).size()];
+        double[] bp = new double[AE.size()];
+        
+        for (int row = 0; row < AE.size(); row++){
+            bp[row] = (double) bE.get(row);
+            for (int column = 0; column < AE.get(0).size(); column ++){
+                Ap[row][column] = (double) AE.get(row).get(column);
+            }
+            
         }
         
         Equation myEq = new Equation(Ap,bp);
