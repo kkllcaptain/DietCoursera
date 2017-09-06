@@ -30,6 +30,11 @@ public class Diet {
         // [Preprocessing] remove all parallel euqations
         // if incorrect euqations were found, return as no solution (-1)
         // if more variables than restrictions, return as infinit (+1)
+        should not remove parallel constraints
+                x>1
+                x<5
+        are two constraints that are linearly parallel but are both active
+                think again.....
         // ====================================================
         
         List<ArrayList> AList = new ArrayList<>();
@@ -43,6 +48,8 @@ public class Diet {
             bList.add(b[i]);
         }
         
+        
+        
         int newSize = preProcessEquations(AList, bList);
         if (newSize == -1) return -1;
         else n -= newSize;
@@ -53,6 +60,11 @@ public class Diet {
         
         // ================= End of PreProcessing =========================
         
+        
+        
+        
+        
+        double OBJ = 0.0; // to maximize
         //  
         // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
         List<List> Sets = new ArrayList<>();
@@ -63,14 +75,22 @@ public class Diet {
         List subset = Sets.get(0);// may not need iterate all sets. 
   
         Equation newEq = constructNewEquations(AList, bList, subset);
-     
+    
         
             
         System.out.println(Arrays.toString(subset.toArray()));
 
 
         // solve the system of euqalities by Gaussian elimination       
-        x = SolveEquation(newEq);
+        double[] ans = SolveEquation(newEq);
+        //System.out.println(Arrays.toString(ans));
+        
+
+        
+        double currentOBJ = calculateOBJ(c,ans);
+        // and x = ans does not work... why?
+        
+        //System.out.println(Arrays.toString(ans));
         
         // the obtained is a vertex
         
@@ -80,12 +100,39 @@ public class Diet {
         
         // find the other vertex on the edge
         
-        
+        for(int i=0; i<ans.length; i++){
+            x[i] = ans[i];
+        }
 
         return 0;
     }
     
+    double calculateOBJ(double[] c, double[] x){
+        double OBJ = 0.0;
+        
+        for (int i =0; i<c.length; i++){
+            OBJ += c[i]*x[i];
+        }
+        
+        
+        return OBJ;
+    }
+    
     int preProcessEquations(List<ArrayList> A, List<Double> b){
+        int n = A.get(0).size();
+        for(int i=0; i<n; i++){
+            List newRow = new ArrayList<Double>();
+            for(int j=0; j<n; j++){
+                double element = (j==i) ? -1.0: 0.0;
+                newRow.add(element);
+            }
+
+            A.add(new ArrayList(newRow));
+            b.add(0.0);
+        }
+        
+        
+        
         int removed = 0; // no restriction was removed (yet)
         for(int row =0; row<A.size(); row++){
                 for(int otherRow = 0; otherRow<A.size(); otherRow++){
@@ -115,7 +162,7 @@ public class Diet {
                             }
                         }
                         boolean bParallel = (Objects.equals(b.get(row), b.get(otherRow)));
-                        //System.out.println("Row "+row+" and Row "+otherRow+" is "+Aparallel+" and "+bParallel);
+                        System.out.println("Row "+row+" and Row "+otherRow+" is "+Aparallel+" and "+bParallel);
                         if(Aparallel&&bParallel){
                             // truely parallel
                             A.remove(otherRow);
