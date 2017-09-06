@@ -52,21 +52,18 @@ public class Diet {
         A = newEq.a;
         b = newEq.b;
         
-        // ===============================================
+        // ================= End of PreProcessing =========================
         
-        // manage the status
-        int status = 0; 
-        
+        //  
         // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
         List<List> Sets = new ArrayList<>();
-        
         Sets = chooseSubSet(n,m);
         
         // now we have a subsets, lets print out all sets
         //for(int setIter = 0; setIter < Sets.size(); setIter ++){
-            List subset = Sets.get(0);// may not need iterate all sets. 
+        List subset = Sets.get(0);// may not need iterate all sets. 
             
-            System.out.println(Arrays.toString(subset.toArray()));
+        System.out.println(Arrays.toString(subset.toArray()));
 
             
             // construct a new A and b
@@ -147,31 +144,6 @@ public class Diet {
         
     }
 
-    static int processStatus(int status, double A[][], double[] b){
-        //if(status == 1){ // not possible for bounded solution, still possible to have no solution
-            for(int row =0; row<A.length; row++){
-                for(int otherRow = 0; otherRow<A.length; otherRow ++){
-                    if(row != otherRow){
-                        double ratio = A[row][0]/A[otherRow][0];
-                        boolean parallel = true;
-                        for(int column = 1; column <A[0].length; column++){
-                            if(A[row][column]/A[otherRow][column] != ratio){
-                                parallel = false;
-                            }
-                        }
-                        if(parallel&&(b[row] != b[otherRow])){
-                            status = -1;
-                            return status;
-                        } else return status;
-                    }
-                }
-            }
-        //}
-        
-        return status;
-        
-    }
-    
     static List<List> chooseSubSet(int n, int m){
         // choose n euqation out of m equations
         
