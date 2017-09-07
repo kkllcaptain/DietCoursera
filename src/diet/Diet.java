@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package diet;
 
 /**
@@ -12,6 +11,29 @@ package diet;
  */
 import java.io.*;
 import java.util.*;
+
+class Equation {
+
+    Equation(double a[][], double b[]) {
+        this.a = a;
+        this.b = b;
+    }
+
+    double a[][];
+    double b[];
+}
+
+class Position {
+
+    Position(int column, int row) {
+        this.column = column;
+        this.row = row;
+    }
+
+    int column;
+    int row;
+}
+
 
 public class Diet {
 
@@ -22,23 +44,56 @@ public class Diet {
 
     int solveDietProblem(int n, int m, double A[][], double[] b, double[] c, double[] x) {
         Arrays.fill(x, 1);
-        // Write your code here - simplex algorithm
-        // m restrictions
-        // n variables
+        // Write your code here
         
-        // ====================================================
-        // [Preprocessing] remove all parallel euqations
-        // if incorrect euqations were found, return as no solution (-1)
-        // if more variables than restrictions, return as infinit (+1)
-        should not remove parallel constraints
-                x>1
-                x<5
-        are two constraints that are linearly parallel but are both active
-                think again.....
-        // ====================================================
-        
-        List<ArrayList> AList = new ArrayList<>();
+        // =============== pre-process ======================================
+        // take matrix A and vector b, build list A and List b
+        // add non-negtivity constraints
+        // remove parallel constraints
+        // detect incorrect (non-overlapping) conditions and return -1
+        // modify Alist and bList as they are objects
+        // ==================================================================
+        List<List> AList = new ArrayList<>();
         List<Double> bList = new ArrayList<>();
+        boolean status = preProcess(A,b,AList,bList);
+        if(!status) return -1;
+        
+        // ==================== make subsets ================================
+        // take the size of Alist and traverse all subsets of sets
+        // ==================================================================
+        List<List> sets = setTraverse(bList.size(),AList.get(0).size());
+        
+        System.out.print(Arrays.toString(sets.toArray()));
+        int index = 0;
+        // ============== rebuild new Equations =============================
+        // tak list AList, and bList and one subset of sets
+        // generate Equation that contains matrix a and vector b
+        // ==================================================================
+        List<Integer> subset = sets.get(index);
+        Equation myEQ = buildEquations(AList, bList, subset);
+        
+      
+        // ==================== Solve for Vertex "p" ========================
+        // ==================================================================
+        double[] soln = solveEquations(myEQ);
+        System.arraycopy(soln, 0, x, 0, soln.length);
+        
+        
+        
+        // ==================== reserved section ================================
+        // ==================================================================
+        
+        // ==================== reserved section ================================
+        // ==================================================================
+        
+      return 0;
+    }
+    
+    static boolean preProcess(double[][] A, double[] b, List<List> AList, List<Double> bList){
+        // ==================== Build Initial A,b Lists =====================
+        // Matrix (Arrays) A and b can not be modified, transfer these to 
+        // arrayLists first
+        // ==================================================================
         for(int i =0; i<A.length; i++){
             List RowList = new ArrayList<Double>();
             for(int j=0; j<A[0].length; j++){
@@ -47,172 +102,102 @@ public class Diet {
             AList.add(new ArrayList(RowList));
             bList.add(b[i]);
         }
-        
-        
-        
-        int newSize = preProcessEquations(AList, bList);
-        if (newSize == -1) return -1;
-        else n -= newSize;
-        //System.out.println("the number of equations that were removed: " + newSize);
-        if (n<m) return 1;
 
-
-        
-        // ================= End of PreProcessing =========================
-        
-        
-        
+//        System.out.println("initial");
+//        System.out.println("the matix A: "+ Arrays.toString(AList.toArray()));
+//        System.out.println("the vector b: "+ Arrays.toString(bList.toArray()));
+//        //System.out.println("the subset chosen: " + Arrays.toString(sets.toArray()));
         
         
-        double OBJ = 0.0; // to maximize
-        //  
-        // permutate all m out of n euqations to construct a system of euqalities to solve for a vetex
-        List<List> Sets = new ArrayList<>();
-        Sets = chooseSubSet(n,m);
-                
-        // now we have a subsets, lets print out all sets
-        //for(int setIter = 0; setIter < Sets.size(); setIter ++){
-        List subset = Sets.get(0);// may not need iterate all sets. 
-  
-        Equation newEq = constructNewEquations(AList, bList, subset);
-    
         
-            
-        System.out.println(Arrays.toString(subset.toArray()));
-
-
-        // solve the system of euqalities by Gaussian elimination       
-        double[] ans = SolveEquation(newEq);
-        //System.out.println(Arrays.toString(ans));
-        
-
-        
-        double currentOBJ = calculateOBJ(c,ans);
-        // and x = ans does not work... why?
-        
-        //System.out.println(Arrays.toString(ans));
-        
-        // the obtained is a vertex
-        
-        // relax one constraint to obtain an edge (that connect to the vertex)
-        
-        // return -1 if infinite
-        
-        // find the other vertex on the edge
-        
-        for(int i=0; i<ans.length; i++){
-            x[i] = ans[i];
-        }
-
-        return 0;
-    }
-    
-    double calculateOBJ(double[] c, double[] x){
-        double OBJ = 0.0;
-        
-        for (int i =0; i<c.length; i++){
-            OBJ += c[i]*x[i];
-        }
-        
-        
-        return OBJ;
-    }
-    
-    int preProcessEquations(List<ArrayList> A, List<Double> b){
-        int n = A.get(0).size();
-        for(int i=0; i<n; i++){
+        // =============== add non-negativity constraints ===================
+        // all x's >= 0   this should be written as    -x_i <= 0
+        // ==================================================================
+        int n_x = AList.get(0).size();
+        for(int i=0; i<n_x; i++){
             List newRow = new ArrayList<Double>();
-            for(int j=0; j<n; j++){
+            for(int j=0; j<n_x; j++){
                 double element = (j==i) ? -1.0: 0.0;
                 newRow.add(element);
             }
-
-            A.add(new ArrayList(newRow));
-            b.add(0.0);
+            AList.add(new ArrayList(newRow));
+            bList.add((double) 0);
         }
         
+//        System.out.println("after adding non-negativity");
+//        System.out.println("the matix A: "+ Arrays.toString(AList.toArray()));
+//        System.out.println("the vector b: "+ Arrays.toString(bList.toArray()));
+//        //System.out.println("the subset chosen: " + Arrays.toString(sets.toArray()));
         
-        
-        int removed = 0; // no restriction was removed (yet)
-        for(int row =0; row<A.size(); row++){
-                for(int otherRow = 0; otherRow<A.size(); otherRow++){
-                    if(row != otherRow){
-                        double ratio = 0.0;
-                        int cc = 0;
-                        
-                        while (ratio == 0.0 && cc < A.size()){
-                            if( (double) A.get(row).get(cc) != 0) {
-                                ratio = ((double)A.get(row).get(cc))/((double) A.get(otherRow).get(cc));
-                            } else {
-                                cc++;
-                            }
-                            }
-                        boolean Aparallel = true;
-                        for(int column = 0; column <A.get(0).size(); column++){
-                            double currentRatio = 0.0;
-                            if (Objects.equals((double)A.get(row).get(column), (double) A.get(otherRow).get(column))&&(double)A.get(row).get(column) == 0.0) {
-                                currentRatio = ratio;
-                            } else {
-                                currentRatio = ((double)A.get(row).get(column))/((double) A.get(otherRow).get(column));
-                            }
-                            //System.out.println("the current raio is " + currentRatio + " and the ratio is " + ratio);
-                            if(!Objects.equals(currentRatio, ratio)){
-                                Aparallel = false;
-                                // not parallel
-                            }
-                        }
-                        boolean bParallel = (Objects.equals(b.get(row), b.get(otherRow)));
-                        System.out.println("Row "+row+" and Row "+otherRow+" is "+Aparallel+" and "+bParallel);
-                        if(Aparallel&&bParallel){
-                            // truely parallel
-                            A.remove(otherRow);
-                            b.remove(otherRow);
-                            removed++;
-                        } else if (Aparallel&&(!bParallel)){
-                            // incorrect fomulation
-                            A.clear();
-                            b.clear();
-                            return -1;
-                        }
-                    }
+        // ==================== Check for Parallel Constraints ==============
+        // if A!/A       ==> it is fine, not parallel 
+        // if A//A, b//b ==> remove one
+        // if A//A, b!/b ==> case 1: one constraint is redundant and should be 
+        //                           removed
+        //                   case 2: there is no-over lapping of the two 
+        //                           ==> report no solution
+        //                   case 3: over lapping, that's fine, do nothing
+        // ==================================================================
+        for(int row =0; row<AList.size(); row++){for(int otherRow = 0; otherRow<AList.size(); otherRow++){if(row != otherRow){
+            // ratios is the ratio between each pair of elements of rows in 
+            // matrix A 
+            //System.out.println("comparing row: "+row+" and other row: "+otherRow);
+            List<Double> ratios = new ArrayList<>(); 
+            double ARatio = (double) 0.0;
+            double bRatio = (double) 0.0;
+            
+            for(int col =0; col<AList.get(0).size(); col++){
+                double tempRatio = (double)AList.get(row).get(col)/(double)AList.get(otherRow).get(col);
+                boolean isZero = Objects.equals((double)AList.get(row).get(col), 0.0);
+                if (!(Double.isInfinite(tempRatio)||Double.isNaN(tempRatio))||!isZero){
+                    ratios.add(tempRatio);
+                    //System.out.println(tempRatio);
                 }
             }
-        return removed;
-    }
-    
-    Equation constructNewEquations(List<ArrayList> A, List<Double> b, List subset){
-        List<ArrayList> AE = A;
-        List<Double> bE = b;
-        
-        for(int index =0; index<A.size(); index++){
-            if((int)subset.get(index) == 0){
-                AE.remove(index);
-                bE.remove(index);
-            }
-        }
-
-        double[][] Ap = new double[AE.size()][AE.get(0).size()];
-        double[] bp = new double[AE.size()];
-        
-        for (int row = 0; row < AE.size(); row++){
-            bp[row] = (double) bE.get(row);
-            for (int column = 0; column < AE.get(0).size(); column ++){
-                Ap[row][column] = (double) AE.get(row).get(column);
+                bRatio = (double)bList.get(row)/(double)bList.get(otherRow);
+            
+            if(ratios.stream().distinct().limit(2).count() <= 1){ // A parallel
+                //System.out.println("A parallel");
+                ARatio = (double) ratios.get(0);
+                if(Objects.equals(ARatio, bRatio)){
+                    //System.out.println("b parallel");
+                    AList.remove(otherRow);
+                    bList.remove(otherRow);
+                    //System.out.println("*******************removing row: "+otherRow);
+                } else if(ARatio > 0){
+                    //System.out.println("same direction");
+                    if (bList.get(otherRow) > bList.get(row)) {
+                        AList.remove(otherRow);
+                        bList.remove(otherRow);
+                        //System.out.println("*******************removing row: "+otherRow);
+                    } else {
+                        AList.remove(row);
+                        bList.remove(row);
+                        //System.out.println("*******************removing row: "+row);
+                    }
+                } else if ((((double)bList.get(row))+((double)bList.get(otherRow)))<0){
+                    //System.out.println("not overlapping");
+                    return false; // answer if the system of equations are fine
+                }
             }
             
-        }
+//        System.out.println("after processing");
+//        System.out.println("the matix A: "+ Arrays.toString(AList.toArray()));
+//        System.out.println("the vector b: "+ Arrays.toString(bList.toArray()));
+//        System.out.println();
+//        //System.out.println("the subset chosen: " + Arrays.toString(sets.toArray()));
+            
+            
+        }}}
         
-        Equation myEq = new Equation(Ap,bp);
-        
-        return myEq;
-        
+        return true;
     }
-
-    List<List> chooseSubSet(int n, int m){
-        // choose n euqation out of m equations
-        
+    
+    static List<List> setTraverse(int n, int m){
         List<List> Sets = new ArrayList<>();
-        // if there are more variables than constraints
+        // n # of constraints/restrictions
+        // m # of variables
+        // m out of n constrains should solve to an point
         if(m == n){
             List<Integer> subset = new ArrayList<>();
             for (int iter = 0; iter<m; iter ++){
@@ -237,10 +222,37 @@ public class Diet {
 
             return Sets;
         }
+    }
+    
+    static Equation buildEquations(List<List> AList, List<Double> bList, List<Integer> subset){
+        List<ArrayList> AE = new ArrayList(); 
+        List<Double> bE = new ArrayList(); 
+        
+        for(int index =0; index<AList.size(); index++){
+            if((int)subset.get(index) == 1){
+                AE.add(new ArrayList((AList.get(index))));
+                bE.add(bList.get(index));
+            }
+        }
+
+        double[][] Ap = new double[AE.size()][AE.get(0).size()];
+        double[] bp = new double[AE.size()];
+        
+        for (int row = 0; row < AE.size(); row++){
+            bp[row] = (double) bE.get(row);
+            for (int column = 0; column < AE.get(0).size(); column ++){
+                Ap[row][column] = (double) AE.get(row).get(column);
+            }
+            
+        }
+        
+        Equation myEq = new Equation(Ap,bp);
+        
+        return myEq;
        
     }
-
-    double[] SolveEquation(Equation equation) {
+    
+    static double[] solveEquations(Equation equation) {
         double a[][] = equation.a;
         double b[] = equation.b;
         int size = a.length;
@@ -256,8 +268,8 @@ public class Diet {
 
         return b;
     }
-
-    Position SelectPivotElement(double a[][], boolean used_rows[], boolean used_columns[]) {
+    
+    static Position SelectPivotElement(double a[][], boolean used_rows[], boolean used_columns[]) {
    
         Position pivot_element = new Position(0,0);
 
@@ -277,7 +289,7 @@ public class Diet {
         return pivot_element;
     }
 
-    void SwapLines(double a[][], double b[], boolean used_rows[], Position pivot_element) {
+    static void SwapLines(double a[][], double b[], boolean used_rows[], Position pivot_element) {
         int size = a.length;
 
         if (pivot_element.row == -1) {
@@ -301,7 +313,7 @@ public class Diet {
         pivot_element.row = pivot_element.column;
     }
 
-    void ProcessPivotElement(double a[][], double b[], Position pivot_element) {
+    static void ProcessPivotElement(double a[][], double b[], Position pivot_element) {
         // Write your code here
         int pivot_row = pivot_element.row;
         int pivot_column = pivot_element.column;
@@ -351,17 +363,14 @@ public class Diet {
         }
     }
 
-    void MarkPivotElementUsed(Position pivot_element, boolean used_rows[], boolean used_columns[]) {
+    static void MarkPivotElementUsed(Position pivot_element, boolean used_rows[], boolean used_columns[]) {
         used_rows[pivot_element.row] = true;
         used_columns[pivot_element.column] = true;
     }
-
+    
     void solve() throws IOException {
-        int n = nextInt(); // number of restrictions/constraints
-        int m = nextInt(); // number of variables
-
-        // standard linear in equalities "Ax <= b"
-        // A is nXm matrix, x is a vector of mX1 and b is vector of nX1
+        int n = nextInt();
+        int m = nextInt();
         double[][] A = new double[n][m];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
@@ -372,14 +381,10 @@ public class Diet {
         for (int i = 0; i < n; i++) {
             b[i] = nextInt();
         }
-
-        // weights of objective function of each different items, c is a vector of size m
         double[] c = new double[m];
         for (int i = 0; i < m; i++) {
             c[i] = nextInt();
         }
-
-        // solve for x
         double[] ansx = new double[m];
         int anst = solveDietProblem(n, m, A, b, c, ansx);
         if (anst == -1) {
@@ -425,27 +430,4 @@ public class Diet {
     int nextInt() throws IOException {
         return Integer.parseInt(nextToken());
     }
-
 }
-
-    class Equation {
-
-        Equation(double a[][], double b[]) {
-            this.a = a;
-            this.b = b;
-        }
-
-        double a[][];
-        double b[];
-    }
-
-    class Position {
-
-        Position(int column, int row) {
-            this.column = column;
-            this.row = row;
-        }
-
-        int column;
-        int row;
-    }
